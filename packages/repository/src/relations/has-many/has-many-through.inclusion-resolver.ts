@@ -17,7 +17,7 @@ import {Getter, HasManyDefinition, InclusionResolver} from '../relation.types';
 import {resolveHasManyMetadata} from './has-many.helpers';
 
 const debug = debugFactory(
-  'loopback:repository:has-many-through-inclusion-resolver',
+  'loopback:repository:relations:has-many-through:inclusion-resolver',
 );
 
 /**

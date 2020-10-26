@@ -7,35 +7,33 @@ import debugFactory from 'debug';
 import {DataObject} from '../../common-types';
 import {Entity} from '../../model';
 import {EntityCrudRepository} from '../../repositories/repository';
-import {Getter, HasManyDefinition, InclusionResolver} from '../relation.types';
-import {resolveHasManyMetadata} from './has-many.helpers';
-import {createHasManyInclusionResolver} from './has-many.inclusion-resolver';
-import {
-  DefaultHasManyRepository,
-  HasManyRepository,
-} from './has-many.repository';
+import {Getter, HasOneDefinition, InclusionResolver} from '../relation.types';
+import {resolveHasOneMetadata} from './has-one.helpers';
+import {createHasOneInclusionResolver} from './has-one.inclusion-resolver';
+import {DefaultHasOneRepository, HasOneRepository} from './has-one.repository';
 
-const debug = debugFactory('loopback:repository:has-many-repository-factory');
+const debug = debugFactory(
+  'loopback:repository:relations:has-one:repository-factory',
+);
 
-export interface HasManyRepositoryFactory<
+export interface HasOneRepositoryFactory<
   Target extends Entity,
   ForeignKeyType
 > {
   /**
-   * Invoke the function to obtain HasManyRepository.
+   * Invoke the function to obtain HasOneRepository.
    */
-  (fkValue: ForeignKeyType): HasManyRepository<Target>;
+  (fkValue: ForeignKeyType): HasOneRepository<Target>;
 
   /**
    * Use `resolver` property to obtain an InclusionResolver for this relation.
    */
   inclusionResolver: InclusionResolver<Entity, Target>;
 }
-
 /**
  * Enforces a constraint on a repository based on a relationship contract
- * between models. For example, if a Customer model is related to an Order model
- * via a HasMany relation, then, the relational repository returned by the
+ * between models. For example, if a Customer model is related to an Address model
+ * via a HasOne relation, then, the relational repository returned by the
  * factory function would be constrained by a Customer model instance's id(s).
  *
  * @param relationMetadata - The relation metadata used to describe the
@@ -45,28 +43,28 @@ export interface HasManyRepositoryFactory<
  * @returns The factory function which accepts a foreign key value to constrain
  * the given target repository
  */
-export function createHasManyRepositoryFactory<
+export function createHasOneRepositoryFactory<
   Target extends Entity,
   TargetID,
   ForeignKeyType
 >(
-  relationMetadata: HasManyDefinition,
+  relationMetadata: HasOneDefinition,
   targetRepositoryGetter: Getter<EntityCrudRepository<Target, TargetID>>,
-): HasManyRepositoryFactory<Target, ForeignKeyType> {
-  const meta = resolveHasManyMetadata(relationMetadata);
-  debug('Resolved HasMany relation metadata: %o', meta);
-  const result: HasManyRepositoryFactory<Target, ForeignKeyType> = function (
+): HasOneRepositoryFactory<Target, ForeignKeyType> {
+  const meta = resolveHasOneMetadata(relationMetadata);
+  debug('Resolved HasOne relation metadata: %o', meta);
+  const result: HasOneRepositoryFactory<Target, ForeignKeyType> = function (
     fkValue: ForeignKeyType,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const constraint: any = {[meta.keyTo]: fkValue};
-    return new DefaultHasManyRepository<
+    return new DefaultHasOneRepository<
       Target,
       TargetID,
       EntityCrudRepository<Target, TargetID>
     >(targetRepositoryGetter, constraint as DataObject<Target>);
   };
-  result.inclusionResolver = createHasManyInclusionResolver(
+  result.inclusionResolver = createHasOneInclusionResolver(
     meta,
     targetRepositoryGetter,
   );

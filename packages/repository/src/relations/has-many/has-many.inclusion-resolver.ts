@@ -16,7 +16,9 @@ import {
 import {Getter, HasManyDefinition, InclusionResolver} from '../relation.types';
 import {resolveHasManyMetadata} from './has-many.helpers';
 
-const debug = debugFactory('loopback:repository:has-many-inclusion-resolver');
+const debug = debugFactory(
+  'loopback:repository:relations:has-many:inclusion-resolver',
+);
 
 /**
  * Creates InclusionResolver for HasMany relation.
@@ -56,7 +58,7 @@ export function createHasManyInclusionResolver<
 
     debug('Parameters:', {sourceKey, sourceIds, targetKey});
     debug(
-      'sourceId types',
+      'SourceId types',
       sourceIds.map(i => typeof i),
     );
 
@@ -77,7 +79,7 @@ export function createHasManyInclusionResolver<
       targetKey,
     );
 
-    debug('fetchHasManyModels result', result);
+    debug('InclusionResolver result', result);
     return result;
   };
 }
