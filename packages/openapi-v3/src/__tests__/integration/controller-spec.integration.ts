@@ -3,6 +3,7 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
+import {ClassDecoratorFactory, MethodDecoratorFactory} from '@loopback/core';
 import {Entity, model, property} from '@loopback/repository';
 import {expect} from '@loopback/testlab';
 import {
@@ -11,12 +12,14 @@ import {
   get,
   getControllerSpec,
   getModelSchemaRef,
+  OAI3Keys,
   OperationObject,
   param,
   ParameterObject,
   post,
   requestBody,
   SchemaObject,
+  SecurityRequirementObject,
 } from '../..';
 
 describe('controller spec', () => {
@@ -217,6 +220,49 @@ describe('controller spec', () => {
         description: 'hello world',
       },
     });
+  });
+
+  it('generates a segurity object', () => {
+    function security(name: string) {
+      return (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        target: any,
+        method?: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        methodDescriptor?: TypedPropertyDescriptor<any>,
+      ) => {
+        if (method && methodDescriptor) {
+          return MethodDecoratorFactory.createDecorator<
+            SecurityRequirementObject[]
+          >(OAI3Keys.SECURITY_METHOD_KEY, [{[name]: []}], {
+            decoratorName: '@security',
+          })(target, method, methodDescriptor);
+        }
+        return ClassDecoratorFactory.createDecorator<
+          SecurityRequirementObject[]
+        >(OAI3Keys.SECURITY_CLASS_KEY, [{[name]: []}], {
+          decoratorName: '@security',
+        })(target);
+      };
+    }
+
+    @security('basic')
+    class SecurityController {
+      @get('/jwt')
+      @security('jwt')
+      helloJwt() {
+        return 'hello world';
+      }
+
+      @get('/')
+      hello() {
+        return 'hello world';
+      }
+    }
+
+    const spec = getControllerSpec(SecurityController);
+    expect(spec.paths['/jwt'].get.security).to.eql([{basic: []}, {jwt: []}]);
+    expect(spec.paths['/'].get.security).to.eql([{basic: []}]);
   });
 
   context('reference models via spec', () => {

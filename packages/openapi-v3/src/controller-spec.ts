@@ -10,6 +10,7 @@ import {
   JsonSchemaOptions,
 } from '@loopback/repository-json-schema';
 import {includes} from 'lodash';
+import {SecurityRequirementObject} from 'openapi3-ts';
 import {buildResponsesFromMetadata} from './build-responses-from-metadata';
 import {resolveSchema} from './generate-schema';
 import {jsonToSchemaObject, SchemaRef} from './json-to-schema';
@@ -99,6 +100,10 @@ function resolveControllerSpec(constructor: Function): ControllerSpec {
     constructor,
   );
 
+  const classSecurity = MetadataInspector.getClassMetadata<
+    SecurityRequirementObject[]
+  >(OAI3Keys.SECURITY_CLASS_KEY, constructor);
+
   if (classVisibility) {
     debug(`  using class-level @oas.visibility(): '${classVisibility}'`);
   }
@@ -107,7 +112,11 @@ function resolveControllerSpec(constructor: Function): ControllerSpec {
     debug('  using class-level @oas.tags()');
   }
 
-  if (classTags || isClassDeprecated || classVisibility) {
+  if (classSecurity) {
+    debug('  using class-level security');
+  }
+
+  if (classTags || isClassDeprecated || classVisibility || classSecurity) {
     for (const path of Object.keys(spec.paths)) {
       for (const method of Object.keys(spec.paths[path])) {
         /* istanbul ignore else */
@@ -128,6 +137,16 @@ function resolveControllerSpec(constructor: Function): ControllerSpec {
             ].tags.concat(classTags.tags);
           } else {
             spec.paths[path][method].tags = classTags.tags;
+          }
+        }
+
+        if (classSecurity) {
+          if (spec.paths[path][method].security?.length) {
+            spec.paths[path][method].security = spec.paths[path][
+              method
+            ].security.concat(classSecurity);
+          } else {
+            spec.paths[path][method].security = classSecurity;
           }
         }
       }
@@ -179,6 +198,14 @@ function resolveControllerSpec(constructor: Function): ControllerSpec {
       debug('  using method-level tags via @oas.tags()');
     }
 
+    const methodSecurity = MetadataInspector.getMethodMetadata<
+      SecurityRequirementObject[]
+    >(OAI3Keys.SECURITY_METHOD_KEY, constructor.prototype, op);
+
+    if (methodSecurity) {
+      debug('  using method-level security');
+    }
+
     let endpointName = '';
     /* istanbul ignore if */
     if (debug.enabled) {
@@ -227,6 +254,18 @@ function resolveControllerSpec(constructor: Function): ControllerSpec {
         operationSpec.tags = operationSpec.tags.concat(methodTags.tags);
       } else {
         operationSpec.tags = methodTags.tags;
+      }
+    }
+
+    if (classSecurity && !operationSpec.security) {
+      operationSpec.security = classSecurity;
+    }
+
+    if (methodSecurity) {
+      if (operationSpec.security?.length) {
+        operationSpec.security = operationSpec.security.concat(methodSecurity);
+      } else {
+        operationSpec.security = methodSecurity;
       }
     }
 

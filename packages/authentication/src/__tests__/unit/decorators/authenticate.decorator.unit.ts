@@ -3,6 +3,8 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
+import {MetadataInspector} from '@loopback/core';
+import {OAI3Keys, SecurityRequirementObject} from '@loopback/rest';
 import {expect} from '@loopback/testlab';
 import {authenticate, getAuthenticateMetadata} from '../../..';
 
@@ -101,7 +103,21 @@ describe('Authentication', () => {
       });
     });
 
-    it('overrides class level metadata by method level', () => {
+    it('adds security metadata to target class', () => {
+      @authenticate('my-strategy')
+      class TestClass {
+        whoAmI() {}
+      }
+
+      const metaData = MetadataInspector.getClassMetadata<
+        SecurityRequirementObject[]
+      >(OAI3Keys.SECURITY_CLASS_KEY, TestClass);
+      expect(metaData?.[0]).to.eql({
+        'my-strategy': [],
+      });
+    });
+
+    it('overrides authenticate class level metadata by method level', () => {
       @authenticate({
         strategy: 'my-strategy',
         options: {option1: 'value1', option2: 'value2'},
@@ -121,6 +137,30 @@ describe('Authentication', () => {
       expect(metaData?.[0]).to.eql({
         strategy: 'another-strategy',
         options: {option1: 'valueA', option2: 'value2'},
+      });
+    });
+
+    it('overrides security class level metadata by method level', () => {
+      @authenticate({
+        strategy: 'my-strategy',
+        options: {option1: 'value1', option2: 'value2'},
+      })
+      class TestClass {
+        @authenticate({
+          strategy: 'another-strategy',
+          options: {
+            option1: 'valueA',
+            option2: 'value2',
+          },
+        })
+        whoAmI() {}
+      }
+
+      const metaData = MetadataInspector.getMethodMetadata<
+        SecurityRequirementObject[]
+      >(OAI3Keys.SECURITY_METHOD_KEY, TestClass.prototype, 'whoAmI');
+      expect(metaData?.[0]).to.eql({
+        'another-strategy': [],
       });
     });
   });

@@ -4,6 +4,7 @@
 // License text available at https://opensource.org/licenses/MIT
 
 import {MetadataAccessor} from '@loopback/core';
+import {SecurityRequirementObject} from 'openapi3-ts';
 import {ControllerSpec, RestEndpoint} from './controller-spec';
 import {
   ParameterObject,
@@ -107,4 +108,20 @@ export namespace OAI3Keys {
     RequestBodyObject,
     ParameterDecorator
   >('openapi-v3:request-body');
+
+  /**
+   * Metadata key used to set or retrieve security metadata on a method.
+   */
+  export const SECURITY_METHOD_KEY = MetadataAccessor.create<
+    SecurityRequirementObject[],
+    MethodDecorator
+  >('openapi-v3:methods:security');
+
+  /**
+   * Metadata key used to set or retrieve security metadata on a class
+   */
+  export const SECURITY_CLASS_KEY = MetadataAccessor.create<
+    SecurityRequirementObject[],
+    ClassDecorator
+  >('openapi-v3:class:security');
 }

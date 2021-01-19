@@ -24,4 +24,5 @@ export * from './decorators';
 export * from './enhancers';
 export * from './filter-schema';
 export * from './json-to-schema';
+export * from './keys';
 export * from './types';

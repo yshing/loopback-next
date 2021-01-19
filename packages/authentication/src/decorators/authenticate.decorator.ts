@@ -10,6 +10,7 @@ import {
   MetadataInspector,
   MethodDecoratorFactory,
 } from '@loopback/core';
+import {OAI3Keys, SecurityRequirementObject} from '@loopback/rest';
 import {
   AUTHENTICATION_METADATA_CLASS_KEY,
   AUTHENTICATION_METADATA_METHOD_KEY,
@@ -51,6 +52,12 @@ export function authenticate(
 
     if (method && methodDescriptor) {
       // Method
+      MethodDecoratorFactory.createDecorator<SecurityRequirementObject[]>(
+        OAI3Keys.SECURITY_METHOD_KEY,
+        specs.map(o => ({[o.strategy]: []})),
+        {decoratorName: '@authenticate'},
+      )(target, method, methodDescriptor);
+
       return MethodDecoratorFactory.createDecorator<AuthenticationMetadata[]>(
         AUTHENTICATION_METADATA_METHOD_KEY,
         specs,
@@ -59,6 +66,12 @@ export function authenticate(
     }
     if (typeof target === 'function' && !method && !methodDescriptor) {
       // Class
+      ClassDecoratorFactory.createDecorator<SecurityRequirementObject[]>(
+        OAI3Keys.SECURITY_CLASS_KEY,
+        specs.map(o => ({[o.strategy]: []})),
+        {decoratorName: '@authenticate'},
+      )(target);
+
       return AuthenticateClassDecoratorFactory.createDecorator<
         AuthenticationMetadata[]
       >(AUTHENTICATION_METADATA_CLASS_KEY, specs, {
